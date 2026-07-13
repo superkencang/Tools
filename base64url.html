@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>URL to Base64 Encoder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 50px;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    textarea, input {
+      width: 90%;
+      max-width: 500px;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #output {
+      background: #e9ecef;
+      border: 1px solid #ccc;
+      min-height: 60px;
+      white-space: break-spaces;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔐 URL to Base64 Encoder</h2>
+  <input type="text" id="urlInput" placeholder="Enter your URL here (e.g., https://google.com)">
+  <button onclick="encodeURL()">Convert to Base64</button>
+  <textarea id="output" readonly placeholder="Base64 encoded output will appear here"></textarea>
+
+  <script>
+    function encodeURL() {
+      const url = document.getElementById("urlInput").value;
+      if (url.trim() === "") {
+        alert("Please enter a valid URL.");
+        return;
+      }
+
+      try {
+        const encoded = btoa(url);
+        document.getElementById("output").value = encoded;
+      } catch (error) {
+        alert("Error encoding URL: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
