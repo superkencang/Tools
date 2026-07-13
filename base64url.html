@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>URL to Base64 Encoder</title>
+  <title>URL ↔ Base64Converter</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,27 +33,51 @@
       color: white;
       border: none;
       border-radius: 4px;
+      margin-right: 5px;
     }
 
     button:hover {
       background-color: #0056b3;
     }
 
-    #output {
-      background: #e9ecef;
+    .box {
+      background: #fff;
       border: 1px solid #ccc;
-      min-height: 60px;
-      white-space: break-spaces;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      width: 90%;
+      max-width: 550px;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-top: 5px;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h2>🔐 URL to Base64 Encoder</h2>
-  <input type="text" id="urlInput" placeholder="Enter your URL here (e.g., https://google.com)">
-  <button onclick="encodeURL()">Convert to Base64</button>
-  <textarea id="output" readonly placeholder="Base64 encoded output will appear here"></textarea>
+  <h2>🔐 URL ↔ Base64 Converter</h2>
+
+  <!-- URL → Base64 -->
+  <div class="box">
+    <span class="label">URL ke Base64</span>
+    <input type="text" id="urlInput" placeholder="Masukkan URL (mis. https://google.com)">
+    <button onclick="encodeURL()">URL → Base64</button>
+    <textarea id="outputB64" readonly placeholder="Hasil Base64 akan muncul di sini"></textarea>
+  </div>
+
+  <!-- Base64 → URL -->
+  <div class="box">
+    <span class="label">Base64 ke URL</span>
+    <textarea id="b64Input" placeholder="Masukkan string Base64 di sini"></textarea>
+    <button onclick="decodeURL()">Base64 → URL</button>
+    <input type="text" id="outputURL" readonly placeholder="Hasil URL akan muncul di sini">
+  </div>
 
   <script>
+    // URL → Base64
     function encodeURL() {
       const url = document.getElementById("urlInput").value;
       if (url.trim() === "") {
@@ -64,9 +87,25 @@
 
       try {
         const encoded = btoa(url);
-        document.getElementById("output").value = encoded;
+        document.getElementById("outputB64").value = encoded;
       } catch (error) {
         alert("Error encoding URL: " + error.message);
+      }
+    }
+
+    // Base64 → URL
+    function decodeURL() {
+      const b64 = document.getElementById("b64Input").value;
+      if (b64.trim() === "") {
+        alert("Please enter a Base64 string.");
+        return;
+      }
+
+      try {
+        const decoded = atob(b64);
+        document.getElementById("outputURL").value = decoded;
+      } catch (error) {
+        alert("Error decoding Base64: " + error.message);
       }
     }
   </script>
