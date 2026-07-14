@@ -1,166 +1,348 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>PHP Obfuscation ↔ Deobfuscation (Compact GOTO - FIXED)</title>
+<title>PHP Obfuscator with GOTO</title>
 <style>
-  body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px}
+  body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px;background:#f5f5f5}
+  .container{max-width:1200px;margin:0 auto}
   textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px;font-family:monospace;font-size:13px}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  button{padding:8px 14px;margin:8px 8px 0 0}
-  .goto-info{background:#f0f0f0;padding:10px;border-radius:6px;margin:10px 0;font-size:12px}
+  button{padding:8px 14px;margin:8px 8px 0 0;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer}
+  button:hover{background:#45a049}
+  button.danger{background:#f44336}
+  button.danger:hover{background:#da190b}
+  button.info{background:#2196F3}
+  button.info:hover{background:#0b7dda}
+  .box{background:white;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  h3{margin:0}
+  .status{font-size:12px;color:#666;margin-top:5px}
 </style>
 
-<div class="goto-info">
-  <strong>🔥 COMPACT GOTO Version - FIXED:</strong> Kode padat dengan semua GOTO di samping (horizontal) - SUDAH BISA JALAN
-</div>
-
-<div class="row">
-  <div>
-    <h3>Kode Obfuscated (input)</h3>
-    <textarea id="inp" placeholder='$z = "";
-$z .= "WlhK";
-$z .= "eWIz";
-...'></textarea>
-    <button id="btnDecode">Obfuscated → PHP biasa</button>
-    <button id="btnClearIn">Bersihkan Input</button>
+<div class="container">
+  <h1>🔐 PHP Obfuscator with GOTO</h1>
+  
+  <div class="row">
+    <div class="box">
+      <div class="header">
+        <h3>📝 Kode PHP Asli (input)</h3>
+        <span class="status">Tulis kode PHP biasa di sini</span>
+      </div>
+      <textarea id="source" placeholder='<?php
+echo "Hello World";
+?>&#10;&#10;atau&#10;&#10;function test() {&#10;  return "test";&#10;}'>&lt;?php
+echo "Hello World";
+?></textarea>
+      <button id="btnObfuscate">🔒 Obfuscate dengan GOTO</button>
+      <button id="btnClearSource" class="danger">Bersihkan</button>
+    </div>
+    
+    <div class="box">
+      <div class="header">
+        <h3>🔒 Hasil Obfuscated (output)</h3>
+        <span class="status">Kode PHP dengan GOTO</span>
+      </div>
+      <textarea id="result" placeholder="Hasil obfuscated akan muncul di sini..."></textarea>
+      <button id="btnCopy" class="info">📋 Copy</button>
+      <button id="btnClearResult" class="danger">Bersihkan</button>
+      <button id="btnTestDecode">🔓 Test Decode</button>
+    </div>
   </div>
-  <div>
-    <h3>Hasil Decode (PHP biasa)</h3>
-    <textarea id="out" placeholder="Hasil PHP muncul di sini..."></textarea>
-    <button id="btnEncode">PHP biasa → Obfuscated (Compact GOTO)</button>
-    <button id="btnClearOut">Bersihkan Output</button>
+
+  <div class="box" style="margin-top:12px">
+    <h3>⚙️ Settings</h3>
+    <label>
+      <input type="checkbox" id="chkMinify" checked> Minify kode (hapus komentar & spasi)
+    </label>
+    <label style="margin-left:15px">
+      <input type="checkbox" id="chkRandomGoto" checked> Gunakan label GOTO acak
+    </label>
+    <label style="margin-left:15px">
+      <input type="checkbox" id="chkDoubleBase64" checked> Double Base64 encoding
+    </label>
   </div>
 </div>
 
 <script>
-/* ==== util UTF-8 safe base64 ==== */
+// ===== UTILITY FUNCTIONS =====
 const b64enc = (str) => {
-  const bytes = new TextEncoder().encode(str);
-  let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
-  return btoa(bin);
+  try {
+    const bytes = new TextEncoder().encode(str);
+    let bin = ""; 
+    bytes.forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin);
+  } catch(e) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
 };
+
 const b64dec = (b64) => {
-  const bin = atob(b64);
-  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  try {
+    const bin = atob(b64);
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch(e) {
+    return decodeURIComponent(escape(atob(b64)));
+  }
 };
-/* pad + urlsafe fix + strict charset */
-function cleanB64(s){
-  s = (s||"").replace(/[^A-Za-z0-9+/=_-]/g,"").replace(/-/g,"+").replace(/_/g,"/");
+
+const cleanB64 = (s) => {
+  s = (s || "").replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
   while (s.length % 4 !== 0) s += "=";
   return s;
-}
-/* ambil hanya baris `$var .= "....";` */
-function collectFragments(src){
-  const re = /(^|\n)\s*\$[A-Za-z_]\w*\s*\.\=\s*["']([^"']+)["']\s*;/g;
-  let m, parts = [];
-  while ((m = re.exec(src)) !== null) {
-    const frag = cleanB64(m[2]);
-    if (frag) parts.push(frag);
-  }
-  return parts.join("");
-}
-/* coba double decode, lalu fallback single */
-function decodeSmart(b64joined){
-  const j = cleanB64(b64joined);
-  let first;
-  try { first = b64dec(j); } 
-  catch(e){ throw new Error("Decode pertama gagal (data bukan base64 murni)."); }
-  try { return b64dec(cleanB64(first)); } 
-  catch(e){ return first; } // hanya single layer
-}
-
-const $ = (id)=>document.getElementById(id);
-
-$("btnDecode").onclick = () => {
-  const src = $("inp").value;
-  if(!src.trim()){ alert("Input kosong"); return; }
-  const joined = collectFragments(src);
-  if(!joined){ alert('Tidak menemukan baris `$x .= "....";`'); return; }
-  try {
-    let decoded = decodeSmart(joined);
-    decoded = decoded.replace(/^\s*<\?php\s*/i,'').replace(/\s*\?>\s*$/,'');
-    $("out").value = decoded;
-  } catch (e){
-    alert("Base64 decode gagal: " + e.message);
-  }
 };
 
-$("btnEncode").onclick = () => {
-  const php = $("out").value || "";
-  const body = php.replace(/^\s*<\?php\s*/i,'').replace(/\s*\?>\s*$/,'');
-  const twice = b64enc(b64enc(body));
-  const CHUNK = 4;
+// ===== MINIFY PHP =====
+function minifyPHP(code) {
+  // Hapus komentar
+  code = code.replace(/\/\*[\s\S]*?\*\//g, '');
+  code = code.replace(/\/\/.*$/gm, '');
+  code = code.replace(/#.*$/gm, '');
   
-  let chunks = [];
-  for (let i = 0; i < twice.length; i += CHUNK) {
-    chunks.push(twice.slice(i, i+CHUNK));
+  // Hapus spasi berlebih
+  code = code.replace(/\s+/g, ' ');
+  code = code.replace(/\(\s+/g, '(');
+  code = code.replace(/\s+\)/g, ')');
+  code = code.replace(/\[\s+/g, '[');
+  code = code.replace(/\s+\]/g, ']');
+  code = code.replace(/\{\s+/g, '{');
+  code = code.replace(/\s+\}/g, '}');
+  code = code.replace(/;\s+/g, ';');
+  code = code.replace(/,\s+/g, ',');
+  code = code.replace(/\s*=\s*/g, '=');
+  code = code.replace(/\s*\.\s*/g, '.');
+  code = code.replace(/\s*\+\s*/g, '+');
+  code = code.replace(/\s*-\s*/g, '-');
+  code = code.replace(/\s*\*\s*/g, '*');
+  code = code.replace(/\s*\/\s*/g, '/');
+  code = code.replace(/\s*%\s*/g, '%');
+  code = code.replace(/\s*<\s*/g, '<');
+  code = code.replace(/\s*>\s*/g, '>');
+  code = code.replace(/\s*!\s*/g, '!');
+  code = code.replace(/\s*&\s*/g, '&');
+  code = code.replace(/\s*\|\s*/g, '|');
+  code = code.replace(/\s*\^\s*/g, '^');
+  code = code.replace(/\s*~\s*/g, '~');
+  
+  return code.trim();
+}
+
+// ===== GENERATE RANDOM STRING =====
+function randomString(length = 8) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// ===== GENERATE RANDOM GOTO LABELS =====
+function generateGotoLabels(count) {
+  const labels = [];
+  for (let i = 0; i < count; i++) {
+    labels.push('l' + randomString(4));
+  }
+  return labels;
+}
+
+// ===== SPLIT STRING INTO CHUNKS =====
+function chunkString(str, chunkSize = 4) {
+  const chunks = [];
+  for (let i = 0; i < str.length; i += chunkSize) {
+    chunks.push(str.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+// ===== MAIN OBFUSCATE FUNCTION =====
+function obfuscateWithGoto(phpCode, options = {}) {
+  const {
+    minify = true,
+    randomGoto = true,
+    doubleBase64 = true,
+    chunkSize = 4
+  } = options;
+
+  let code = phpCode;
+  
+  // Remove PHP tags if present
+  code = code.replace(/^\s*<\?php\s*/i, '');
+  code = code.replace(/\s*\?>\s*$/i, '');
+  
+  // Minify if enabled
+  if (minify) {
+    code = minifyPHP(code);
   }
   
-  // Buat kode GOTO yang PADAT dan BISA JALAN
-  let lines = ['<?php'];
-  
-  // Mulai dengan goto ke label start
-  lines.push('goto start;');
-  
-  // Label start dan inisialisasi
-  let chunkLines = [];
-  
-  // Baris pertama: start label + inisialisasi $z
-  if (chunks.length > 0) {
-    chunkLines.push(`start:$z="";${chunks.length > 1 ? 'goto c1;' : 'goto d1;'}`);
+  // Base64 encode
+  let encoded = b64enc(code);
+  if (doubleBase64) {
+    encoded = b64enc(encoded);
   }
   
-  // Chunk-chunk berikutnya
+  // Generate random variable names
+  const varName = 'z' + randomString(3);
+  const funcName = 'f' + randomString(3);
+  const gotoLabel1 = 'g' + randomString(4);
+  const gotoLabel2 = 'h' + randomString(4);
+  const gotoLabel3 = 'i' + randomString(4);
+  
+  // Generate random GOTO labels if enabled
+  let labels = [gotoLabel1, gotoLabel2, gotoLabel3];
+  if (randomGoto) {
+    labels = generateGotoLabels(5);
+  }
+  
+  // Split encoded string into chunks
+  const chunks = chunkString(encoded, chunkSize);
+  
+  // Build obfuscated code
+  let obfuscated = [];
+  
+  // Initialize variable
+  obfuscated.push(`<?php ${varName} = "";`);
+  
+  // Add encoded chunks with GOTO between chunks
   for (let i = 0; i < chunks.length; i++) {
-    if (i === 0) continue; // skip yang pertama karena sudah di start
+    if (i % 5 === 0 && i > 0) {
+      const label = labels[Math.floor(Math.random() * labels.length)];
+      obfuscated.push(`if (1) goto ${label};`);
+      obfuscated.push(`${label}:`);
+    }
+    obfuscated.push(`${varName} .= "${chunks[i]}";`);
+  }
+  
+  // Build decoder function with GOTO
+  obfuscated.push(`if (1) goto ${labels[0]};`);
+  obfuscated.push(`${labels[0]}:`);
+  obfuscated.push(`$a = "base";`);
+  obfuscated.push(`$b = "64_decode";`);
+  obfuscated.push(`$c = $a . $b;`);
+  
+  obfuscated.push(`if (1) goto ${labels[1]};`);
+  obfuscated.push(`${labels[1]}:`);
+  obfuscated.push(`$d = $c(${varName});`);
+  
+  if (doubleBase64) {
+    obfuscated.push(`if (1) goto ${labels[2]};`);
+    obfuscated.push(`${labels[2]}:`);
+    obfuscated.push(`$d = $c($d);`);
+  }
+  
+  obfuscated.push(`if (1) goto ${labels[3]};`);
+  obfuscated.push(`${labels[3]}:`);
+  obfuscated.push(`$d = preg_replace('/^<\\?php\\s*/', '', $d);`);
+  obfuscated.push(`$d = preg_replace('/\\s*\\?>$/', '', $d);`);
+  
+  obfuscated.push(`if (1) goto ${labels[4]};`);
+  obfuscated.push(`${labels[4]}:`);
+  obfuscated.push(`eval($d);`);
+  
+  // Add obfuscation comments (optional)
+  obfuscated.push(`// ${randomString(20)}`);
+  
+  return obfuscated.join(' ');
+}
+
+// ===== DECODE OBFUSCATED CODE =====
+function decodeObfuscated(obfuscatedCode) {
+  try {
+    // Try to extract base64 string from the code
+    const matches = obfuscatedCode.match(/\$[a-zA-Z0-9_]+\s*\.=\s*"([^"]+)"/g);
+    if (!matches) {
+      throw new Error('Tidak ditemukan string base64');
+    }
     
-    const label = `c${i}`;
-    const nextLabel = i < chunks.length - 1 ? `c${i+1}` : 'd1';
-    chunkLines.push(`${label}:$z.="${chunks[i]}";goto ${nextLabel};`);
+    // Extract and combine chunks
+    let base64String = '';
+    matches.forEach(match => {
+      const chunk = match.match(/"([^"]+)"/);
+      if (chunk) {
+        base64String += chunk[1];
+      }
+    });
+    
+    // Clean and decode
+    base64String = cleanB64(base64String);
+    let decoded = b64dec(base64String);
+    
+    // Try second layer if needed
+    try {
+      const testDecode = b64dec(cleanB64(decoded));
+      if (testDecode && testDecode.length > 0) {
+        decoded = testDecode;
+      }
+    } catch(e) {
+      // Keep first layer
+    }
+    
+    return decoded;
+  } catch(e) {
+    throw new Error('Gagal mendecode: ' + e.message);
+  }
+}
+
+// ===== UI FUNCTIONS =====
+const $ = (id) => document.getElementById(id);
+
+$("btnObfuscate").onclick = () => {
+  const source = $("source").value;
+  if (!source.trim()) {
+    alert('Masukkan kode PHP terlebih dahulu!');
+    return;
   }
   
-  // Proses decode
-  const processLines = [
-    'd1:$a="base";goto d2;',
-    'd2:$b="64_decode";goto d3;',
-    'd3:$c=$a.$b;goto p1;',
-    'p1:$string=$c($z);goto p2;',
-    'p2:$string=$c($string);goto cl1;',
-    'cl1:$p1="/^<\\?php\\s*/";goto cl2;',
-    'cl2:$string=preg_replace($p1,"",$string);goto cl3;',
-    'cl3:$p2="/\\s*\\?>$/";goto cl4;',
-    'cl4:$string=preg_replace($p2,"",$string);goto ev;',
-    'ev:eval($string);goto end;',
-    'end:?>'
-  ];
-  
-  // Gabungkan semua
-  let allLines = [];
-  allLines.push('<?php');
-  allLines.push('goto start;');
-  
-  // Tambahkan start + chunk pertama
-  if (chunks.length > 0) {
-    allLines.push(`start:$z="";${chunks.length > 1 ? 'goto c1;' : 'goto d1;'}`);
+  try {
+    const options = {
+      minify: $("chkMinify").checked,
+      randomGoto: $("chkRandomGoto").checked,
+      doubleBase64: $("chkDoubleBase64").checked
+    };
+    
+    const result = obfuscateWithGoto(source, options);
+    $("result").value = result;
+  } catch(e) {
+    alert('Error: ' + e.message);
   }
-  
-  // Tambahkan chunk sisanya
-  for (let i = 1; i < chunks.length; i++) {
-    const nextLabel = i < chunks.length - 1 ? `c${i+1}` : 'd1';
-    allLines.push(`c${i}:$z.="${chunks[i]}";goto ${nextLabel};`);
-  }
-  
-  // Tambahkan proses decode
-  for (let line of processLines) {
-    allLines.push(line);
-  }
-  
-  // Filter yang kosong
-  allLines = allLines.filter(line => line.trim() !== '');
-  
-  $("inp").value = allLines.join("\n");
 };
 
-$("btnClearIn").onclick = ()=> $("inp").value = "";
-$("btnClearOut").onclick = ()=> $("out").value = "";
+$("btnTestDecode").onclick = () => {
+  const code = $("result").value;
+  if (!code.trim()) {
+    alert('Tidak ada kode untuk didecode!');
+    return;
+  }
+  
+  try {
+    const decoded = decodeObfuscated(code);
+    alert('Decode berhasil!\n\n' + decoded.substring(0, 500) + (decoded.length > 500 ? '...' : ''));
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+$("btnCopy").onclick = () => {
+  const result = $("result");
+  result.select();
+  document.execCommand('copy');
+  alert('Kode berhasil dicopy!');
+};
+
+$("btnClearSource").onclick = () => $("source").value = "";
+$("btnClearResult").onclick = () => $("result").value = "";
+
+// Example: Show sample code
+const sampleCode = `<?php
+function greet($name) {
+    echo "Hello, " . $name . "!";
+}
+
+greet("World");
+?>`;
+
+// Load sample on first open
+$("source").value = sampleCode;
+
 </script>
+</body>
+</html>
