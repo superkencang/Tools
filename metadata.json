@@ -1,0 +1,6 @@
+{
+  "name": "Admin Web Tools Panel",
+  "description": "A unified administration dashboard containing specialized tools for PHP obfuscation/deobfuscation, ROT13 conversion, URL-to-Base64 encoding, and Base64-to-URL decoding, complete with MD5-based password protection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
