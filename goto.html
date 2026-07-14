@@ -1,0 +1,150 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>PHP Obfuscation ↔ Deobfuscation (GOTO Version)</title>
+<style>
+  body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px}
+  textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{padding:8px 14px;margin:8px 8px 0 0}
+  .goto-info{background:#f0f0f0;padding:10px;border-radius:6px;margin:10px 0;font-size:12px}
+</style>
+
+<div class="goto-info">
+  <strong>⚠️ GOTO Version:</strong> Menggunakan struktur goto untuk membuat kode lebih sulit dibaca
+</div>
+
+<div class="row">
+  <div>
+    <h3>Kode Obfuscated (input)</h3>
+    <textarea id="inp" placeholder='$z = "";
+$z .= "WlhK";
+$z .= "eWIz";
+...'></textarea>
+    <button id="btnDecode">Obfuscated → PHP biasa</button>
+    <button id="btnClearIn">Bersihkan Input</button>
+  </div>
+  <div>
+    <h3>Hasil Decode (PHP biasa)</h3>
+    <textarea id="out" placeholder="Hasil PHP muncul di sini..."></textarea>
+    <button id="btnEncode">PHP biasa → Obfuscated (GOTO)</button>
+    <button id="btnClearOut">Bersihkan Output</button>
+  </div>
+</div>
+
+<script>
+/* ==== util UTF-8 safe base64 ==== */
+const b64enc = (str) => {
+  const bytes = new TextEncoder().encode(str);
+  let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+};
+const b64dec = (b64) => {
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+/* pad + urlsafe fix + strict charset */
+function cleanB64(s){
+  s = (s||"").replace(/[^A-Za-z0-9+/=_-]/g,"").replace(/-/g,"+").replace(/_/g,"/");
+  while (s.length % 4 !== 0) s += "=";
+  return s;
+}
+/* ambil hanya baris `$var .= "....";` */
+function collectFragments(src){
+  const re = /(^|\n)\s*\$[A-Za-z_]\w*\s*\.\=\s*["']([^"']+)["']\s*;/g;
+  let m, parts = [];
+  while ((m = re.exec(src)) !== null) {
+    const frag = cleanB64(m[2]);
+    if (frag) parts.push(frag);
+  }
+  return parts.join("");
+}
+/* coba double decode, lalu fallback single */
+function decodeSmart(b64joined){
+  const j = cleanB64(b64joined);
+  let first;
+  try { first = b64dec(j); } 
+  catch(e){ throw new Error("Decode pertama gagal (data bukan base64 murni)."); }
+  try { return b64dec(cleanB64(first)); } 
+  catch(e){ return first; } // hanya single layer
+}
+
+const $ = (id)=>document.getElementById(id);
+
+$("btnDecode").onclick = () => {
+  const src = $("inp").value;
+  if(!src.trim()){ alert("Input kosong"); return; }
+  const joined = collectFragments(src);
+  if(!joined){ alert('Tidak menemukan baris `$x .= "....";`'); return; }
+  try {
+    let decoded = decodeSmart(joined);
+    decoded = decoded.replace(/^\s*<\?php\s*/i,'').replace(/\s*\?>\s*$/,'');
+    $("out").value = decoded;
+  } catch (e){
+    alert("Base64 decode gagal: " + e.message);
+  }
+};
+
+$("btnEncode").onclick = () => {
+  const php = $("out").value || "";
+  // buang tag agar tidak dobel
+  const body = php.replace(/^\s*<\?php\s*/i,'').replace(/\s*\?>\s*$/,'');
+  // double base64
+  const twice = b64enc(b64enc(body));
+  // pecah per 4 char biar mirip contoh
+  const CHUNK = 4;
+  let lines = ['<?php', 'goto start;', '', 'start:', '$z = "";'];
+  
+  // GOTO labels untuk setiap chunk
+  let labelNum = 1;
+  for (let i = 0; i < twice.length; i += CHUNK){
+    const chunk = twice.slice(i, i+CHUNK);
+    if (i + CHUNK < twice.length) {
+      lines.push(`$z .= "${chunk}";`);
+      lines.push(`goto chunk${labelNum};`);
+      lines.push(``);
+      lines.push(`chunk${labelNum}:`);
+      labelNum++;
+    } else {
+      lines.push(`$z .= "${chunk}";`);
+    }
+  }
+  
+  // GOTO untuk proses decode
+  lines.push(`goto decode_start;`);
+  lines.push(``);
+  lines.push(`decode_start:`);
+  lines.push(`$a = "base";`);
+  lines.push(`$b = "64_decode";`);
+  lines.push(`$c = $a . $b;`);
+  lines.push(`goto process1;`);
+  lines.push(``);
+  lines.push(`process1:`);
+  lines.push(`$string = $c($z);`);
+  lines.push(`goto process2;`);
+  lines.push(``);
+  lines.push(`process2:`);
+  lines.push(`$string = $c($string);`);
+  lines.push(`goto clean1;`);
+  lines.push(``);
+  lines.push(`clean1:`);
+  lines.push(`$string = preg_replace('/^<\\?php\\s*/', '', $string);`);
+  lines.push(`goto clean2;`);
+  lines.push(``);
+  lines.push(`clean2:`);
+  lines.push(`$string = preg_replace('/\\s*\\?>$/', '', $string);`);
+  lines.push(`goto eval_code;`);
+  lines.push(``);
+  lines.push(`eval_code:`);
+  lines.push(`eval($string);`);
+  lines.push(`goto end;`);
+  lines.push(``);
+  lines.push(`end:`);
+  lines.push(`?>`);
+  
+  $("inp").value = lines.join("\n");
+};
+
+$("btnClearIn").onclick = ()=> $("inp").value = "";
+$("btnClearOut").onclick = ()=> $("out").value = "";
+</script>
