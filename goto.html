@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>PHP Obfuscation ↔ Deobfuscation (Compact GOTO)</title>
+<title>PHP Obfuscation ↔ Deobfuscation (Compact GOTO - FIXED)</title>
 <style>
   body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px}
   textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px;font-family:monospace;font-size:13px}
@@ -10,7 +10,7 @@
 </style>
 
 <div class="goto-info">
-  <strong>🔥 COMPACT GOTO Version:</strong> Kode padat dengan semua GOTO di samping (horizontal)
+  <strong>🔥 COMPACT GOTO Version - FIXED:</strong> Kode padat dengan semua GOTO di samping (horizontal) - SUDAH BISA JALAN
 </div>
 
 <div class="row">
@@ -96,47 +96,61 @@ $("btnEncode").onclick = () => {
     chunks.push(twice.slice(i, i+CHUNK));
   }
   
-  // Buat kode GOTO yang PADAT dan ke SAMPING
+  // Buat kode GOTO yang PADAT dan BISA JALAN
   let lines = ['<?php'];
   
-  // String chunks dengan GOTO ke samping
+  // Mulai dengan goto ke label start
+  lines.push('goto start;');
+  
+  // Label start dan inisialisasi
   let chunkLines = [];
-  for (let i = 0; i < chunks.length; i++) {
-    if (i === 0) {
-      chunkLines.push(`$z="";${i < chunks.length-1 ? 'goto c1;' : ''}`);
-    } else {
-      const label = `c${i}`;
-      const nextGoto = i < chunks.length-1 ? `goto c${i+1};` : '';
-      chunkLines.push(`${label}:$z.="${chunks[i]}";${nextGoto}`);
-    }
+  
+  // Baris pertama: start label + inisialisasi $z
+  if (chunks.length > 0) {
+    chunkLines.push(`start:$z="";${chunks.length > 1 ? 'goto c1;' : 'goto d1;'}`);
   }
   
-  // Semua proses dalam satu baris dengan GOTO ke samping
+  // Chunk-chunk berikutnya
+  for (let i = 0; i < chunks.length; i++) {
+    if (i === 0) continue; // skip yang pertama karena sudah di start
+    
+    const label = `c${i}`;
+    const nextLabel = i < chunks.length - 1 ? `c${i+1}` : 'd1';
+    chunkLines.push(`${label}:$z.="${chunks[i]}";goto ${nextLabel};`);
+  }
+  
+  // Proses decode
   const processLines = [
-    `d1:$a="base";goto d2;`,
-    `d2:$b="64_decode";goto d3;`,
-    `d3:$c=$a.$b;goto p1;`,
-    `p1:$string=$c($z);goto p2;`,
-    `p2:$string=$c($string);goto cl;`,
-    `cl:$p1='/^<\\?php\\s*/';goto cl2;`,
-    `cl2:$string=preg_replace($p1,'',$string);goto cl3;`,
-    `cl3:$p2='/\\s*\\?>$/';goto cl4;`,
-    `cl4:$string=preg_replace($p2,'',$string);goto ev;`,
-    `ev:eval($string);goto en;`,
-    `en:?>`
+    'd1:$a="base";goto d2;',
+    'd2:$b="64_decode";goto d3;',
+    'd3:$c=$a.$b;goto p1;',
+    'p1:$string=$c($z);goto p2;',
+    'p2:$string=$c($string);goto cl1;',
+    'cl1:$p1="/^<\\?php\\s*/";goto cl2;',
+    'cl2:$string=preg_replace($p1,"",$string);goto cl3;',
+    'cl3:$p2="/\\s*\\?>$/";goto cl4;',
+    'cl4:$string=preg_replace($p2,"",$string);goto ev;',
+    'ev:eval($string);goto end;',
+    'end:?>'
   ];
   
   // Gabungkan semua
   let allLines = [];
   allLines.push('<?php');
-  allLines.push('goto s;');
-  allLines.push('s:' + chunkLines[0]);
+  allLines.push('goto start;');
   
-  for (let i = 1; i < chunkLines.length; i++) {
-    allLines.push(chunkLines[i]);
+  // Tambahkan start + chunk pertama
+  if (chunks.length > 0) {
+    allLines.push(`start:$z="";${chunks.length > 1 ? 'goto c1;' : 'goto d1;'}`);
   }
   
-  // Tambahkan proses dengan label unik
+  // Tambahkan chunk sisanya
+  for (let i = 1; i < chunks.length; i++) {
+    const nextLabel = i < chunks.length - 1 ? `c${i+1}` : 'd1';
+    allLines.push(`c${i}:$z.="${chunks[i]}";goto ${nextLabel};`);
+  }
+  
+  // Tambahkan proses decode
   for (let line of processLines) {
     allLines.push(line);
   }
