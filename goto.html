@@ -1,348 +1,816 @@
 <!doctype html>
-<meta charset="utf-8" />
-<title>PHP Obfuscator with GOTO</title>
-<style>
-  body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px;background:#f5f5f5}
-  .container{max-width:1200px;margin:0 auto}
-  textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px;font-family:monospace;font-size:13px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  button{padding:8px 14px;margin:8px 8px 0 0;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer}
-  button:hover{background:#45a049}
-  button.danger{background:#f44336}
-  button.danger:hover{background:#da190b}
-  button.info{background:#2196F3}
-  button.info:hover{background:#0b7dda}
-  .box{background:white;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
-  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  h3{margin:0}
-  .status{font-size:12px;color:#666;margin-top:5px}
-</style>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>PHP Goto-Label Labyrinth (V2.0)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Menggunakan Tailwind CSS versi modern untuk tampilan Cyberpunk Premium -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    code, textarea, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbar ala modern editor */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.5);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-[#09090b] text-zinc-100 min-h-screen relative overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
 
-<div class="container">
-  <h1>🔐 PHP Obfuscator with GOTO</h1>
-  
-  <div class="row">
-    <div class="box">
-      <div class="header">
-        <h3>📝 Kode PHP Asli (input)</h3>
-        <span class="status">Tulis kode PHP biasa di sini</span>
+  <!-- Efek Ambience Cyber Labyrinth -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f293706_1px,transparent_1px),linear-gradient(to_bottom,#1f293706_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+  <div class="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-10 left-10 w-80 h-80 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+  <!-- Header Bar -->
+  <header class="relative border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl">
+          <!-- Logo Shield SVG -->
+          <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase tracking-wider font-mono px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded">GOTO v2.0 SPAGHETTI</span>
+            <span class="text-zinc-500 text-xs font-mono">• PHP Obfuscator Tool</span>
+          </div>
+          <h1 class="text-lg font-semibold tracking-tight text-white mt-0.5">PHP Goto-Label Labyrinth</h1>
+        </div>
       </div>
-      <textarea id="source" placeholder='<?php
-echo "Hello World";
-?>&#10;&#10;atau&#10;&#10;function test() {&#10;  return "test";&#10;}'>&lt;?php
-echo "Hello World";
-?></textarea>
-      <button id="btnObfuscate">🔒 Obfuscate dengan GOTO</button>
-      <button id="btnClearSource" class="danger">Bersihkan</button>
-    </div>
-    
-    <div class="box">
-      <div class="header">
-        <h3>🔒 Hasil Obfuscated (output)</h3>
-        <span class="status">Kode PHP dengan GOTO</span>
+
+      <div class="flex items-center gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
+        <span class="px-3 py-1 text-zinc-400 font-mono">Status Sistem: <strong class="text-emerald-400">AKTIF</strong></span>
       </div>
-      <textarea id="result" placeholder="Hasil obfuscated akan muncul di sini..."></textarea>
-      <button id="btnCopy" class="info">📋 Copy</button>
-      <button id="btnClearResult" class="danger">Bersihkan</button>
-      <button id="btnTestDecode">🔓 Test Decode</button>
     </div>
-  </div>
+  </header>
 
-  <div class="box" style="margin-top:12px">
-    <h3>⚙️ Settings</h3>
-    <label>
-      <input type="checkbox" id="chkMinify" checked> Minify kode (hapus komentar & spasi)
-    </label>
-    <label style="margin-left:15px">
-      <input type="checkbox" id="chkRandomGoto" checked> Gunakan label GOTO acak
-    </label>
-    <label style="margin-left:15px">
-      <input type="checkbox" id="chkDoubleBase64" checked> Double Base64 encoding
-    </label>
-  </div>
-</div>
+  <!-- Main Workspace -->
+  <main class="relative max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 z-10 space-y-6">
 
-<script>
-// ===== UTILITY FUNCTIONS =====
-const b64enc = (str) => {
-  try {
-    const bytes = new TextEncoder().encode(str);
-    let bin = ""; 
-    bytes.forEach(b => bin += String.fromCharCode(b));
-    return btoa(bin);
-  } catch(e) {
-    return btoa(unescape(encodeURIComponent(str)));
-  }
-};
+    <!-- Deskripsi Singkat -->
+    <div class="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-emerald-400 text-lg">✦</span>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Ubah file PHP biasa Anda menjadi kode <strong class="text-zinc-200">Spaghetti Goto melompat acak</strong> yang dipadukan dengan blok decoys (palsu) untuk menyulitkan pembacaan logika decompiler.
+        </p>
+      </div>
+      <button onclick="loadDemo()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium border border-zinc-700/50 transition shrink-0 flex items-center gap-1">
+        🔄 Gunakan Script Demo
+      </button>
+    </div>
 
-const b64dec = (b64) => {
-  try {
-    const bin = atob(b64);
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-  } catch(e) {
-    return decodeURIComponent(escape(atob(b64)));
-  }
-};
+    <!-- Kotak Input / Output Utama -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      
+      <!-- Sisi Kiri: PHP Biasa (Input) -->
+      <div class="lg:col-span-5 flex flex-col bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden shadow-xl">
+        <div class="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 bg-cyan-400 rounded-full"></div>
+            <h3 class="text-xs font-medium text-zinc-200 uppercase tracking-wider font-mono">Kode PHP Biasa (Readable)</h3>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="copyText('inp')" class="p-1 hover:bg-zinc-800 rounded transition text-zinc-400 hover:text-white text-xs" title="Salin">📋</button>
+            <button onclick="clearText('inp')" class="p-1 hover:bg-zinc-800 rounded transition text-zinc-400 hover:text-rose-400 text-xs" title="Bersihkan">🗑️</button>
+          </div>
+        </div>
+        <textarea id="inp" placeholder="Tulis atau tempel script PHP di sini...&#10;&#10;Contoh:&#10;<?php&#10;echo 'Selamat datang di Labyrinth!';&#10;?>" class="w-full h-[380px] p-4 bg-zinc-950 text-zinc-200 text-xs leading-relaxed border-0 focus:ring-1 focus:ring-cyan-500/50 outline-none resize-none custom-scrollbar"></textarea>
+        <div class="p-3 bg-zinc-950/60 border-t border-zinc-800/80 flex justify-end">
+          <button onclick="doObfuscate()" class="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-medium text-xs rounded-lg shadow-md transition">
+            🔒 PHP Biasa ➔ Obfuscate GOTO
+          </button>
+        </div>
+      </div>
 
-const cleanB64 = (s) => {
-  s = (s || "").replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
-  while (s.length % 4 !== 0) s += "=";
-  return s;
-};
+      <!-- Sisi Tengah: Kontroler & Kompleksitas -->
+      <div class="lg:col-span-2 flex flex-col gap-4 justify-center">
+        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-3 text-center">
+          <div class="text-[11px] text-zinc-500 uppercase tracking-wider font-mono border-b border-zinc-800 pb-1.5">Skor Labyrinth</div>
+          <div id="lblScore" class="font-mono text-xl font-bold text-zinc-300">0 pts</div>
+          <span id="lblGrade" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700">Kosong</span>
+        </div>
 
-// ===== MINIFY PHP =====
-function minifyPHP(code) {
-  // Hapus komentar
-  code = code.replace(/\/\*[\s\S]*?\*\//g, '');
-  code = code.replace(/\/\/.*$/gm, '');
-  code = code.replace(/#.*$/gm, '');
-  
-  // Hapus spasi berlebih
-  code = code.replace(/\s+/g, ' ');
-  code = code.replace(/\(\s+/g, '(');
-  code = code.replace(/\s+\)/g, ')');
-  code = code.replace(/\[\s+/g, '[');
-  code = code.replace(/\s+\]/g, ']');
-  code = code.replace(/\{\s+/g, '{');
-  code = code.replace(/\s+\}/g, '}');
-  code = code.replace(/;\s+/g, ';');
-  code = code.replace(/,\s+/g, ',');
-  code = code.replace(/\s*=\s*/g, '=');
-  code = code.replace(/\s*\.\s*/g, '.');
-  code = code.replace(/\s*\+\s*/g, '+');
-  code = code.replace(/\s*-\s*/g, '-');
-  code = code.replace(/\s*\*\s*/g, '*');
-  code = code.replace(/\s*\/\s*/g, '/');
-  code = code.replace(/\s*%\s*/g, '%');
-  code = code.replace(/\s*<\s*/g, '<');
-  code = code.replace(/\s*>\s*/g, '>');
-  code = code.replace(/\s*!\s*/g, '!');
-  code = code.replace(/\s*&\s*/g, '&');
-  code = code.replace(/\s*\|\s*/g, '|');
-  code = code.replace(/\s*\^\s*/g, '^');
-  code = code.replace(/\s*~\s*/g, '~');
-  
-  return code.trim();
-}
+        <div class="flex lg:flex-col gap-2">
+          <button onclick="doObfuscate()" class="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold tracking-wide transition flex items-center justify-center gap-1">
+            Encode ➔
+          </button>
+          <button onclick="doDeobfuscate()" class="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold tracking-wide transition flex items-center justify-center gap-1">
+            🔀 Decode
+          </button>
+        </div>
+      </div>
 
-// ===== GENERATE RANDOM STRING =====
-function randomString(length = 8) {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+      <!-- Sisi Kanan: PHP Obfuscated (Spaghetti GOTO) -->
+      <div class="lg:col-span-5 flex flex-col bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden shadow-xl">
+        <div class="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></div>
+            <h3 class="text-xs font-medium text-zinc-200 uppercase tracking-wider font-mono">Kode PHP Obfuscated (Goto Labyrinth)</h3>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="copyText('out')" class="p-1 hover:bg-zinc-800 rounded transition text-zinc-400 hover:text-white text-xs" title="Salin">📋</button>
+            <button onclick="clearText('out')" class="p-1 hover:bg-zinc-800 rounded transition text-zinc-400 hover:text-rose-400 text-xs" title="Bersihkan">🗑️</button>
+          </div>
+        </div>
+        <textarea id="out" placeholder="Hasil kode PHP Labyrinth muncul di sini...&#10;&#10;Atau tempel kode Labyrinth Anda di sini untuk didecode ulang." class="w-full h-[380px] p-4 bg-zinc-950 text-emerald-400 text-xs leading-relaxed border-0 focus:ring-1 focus:ring-emerald-500/50 outline-none resize-none custom-scrollbar"></textarea>
+        <div class="p-3 bg-zinc-950/60 border-t border-zinc-800/80 flex justify-between items-center">
+          <span class="text-[10px] text-zinc-500 font-mono">Format: GOTO SPAGHETTI</span>
+          <button onclick="doDeobfuscate()" class="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-medium text-xs rounded-lg border border-zinc-700 transition">
+            🔓 Obfuscated ➔ PHP Biasa
+          </button>
+        </div>
+      </div>
 
-// ===== GENERATE RANDOM GOTO LABELS =====
-function generateGotoLabels(count) {
-  const labels = [];
-  for (let i = 0; i < count; i++) {
-    labels.push('l' + randomString(4));
-  }
-  return labels;
-}
+    </div>
 
-// ===== SPLIT STRING INTO CHUNKS =====
-function chunkString(str, chunkSize = 4) {
-  const chunks = [];
-  for (let i = 0; i < str.length; i += chunkSize) {
-    chunks.push(str.slice(i, i + chunkSize));
-  }
-  return chunks;
-}
+    <!-- Pengaturan Konfigurasi Labyrinth -->
+    <div class="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800">
+      <h3 class="text-xs uppercase tracking-wider font-bold text-zinc-400 font-mono mb-4 flex items-center gap-1.5">
+        ⚙️ PENGATURAN LABYRINTH & PERLINDUNGAN
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs">
+        
+        <!-- Kolom 1: Gaya Penulisan Label -->
+        <div class="space-y-2">
+          <label class="block text-zinc-400 font-medium">Gaya Nama Label</label>
+          <select id="cfgStyle" class="w-full bg-zinc-950 text-zinc-300 py-1.5 px-2 rounded-lg border border-zinc-800 focus:outline-none focus:border-emerald-500/40">
+            <option value="cyber">Cyber Router Node (cipher_x9)</option>
+            <option value="hex" selected>Cryptic Hexadecimal (lbl_0x7f3)</option>
+            <option value="spaghetti">Spaghetti O0O0 (O0oOO01)</option>
+            <option value="binary">Binary Illusion (bin_1010_1)</option>
+          </select>
+          <span class="text-[10px] text-zinc-500 block">Menentukan bentuk penamaan label lompatan dalam program.</span>
+        </div>
 
-// ===== MAIN OBFUSCATE FUNCTION =====
-function obfuscateWithGoto(phpCode, options = {}) {
-  const {
-    minify = true,
-    randomGoto = true,
-    doubleBase64 = true,
-    chunkSize = 4
-  } = options;
+        <!-- Kolom 2: Pemisahan String (Fragmentasi) -->
+        <div class="space-y-2">
+          <label class="block text-zinc-400 font-medium">Rentang Ukuran Fragmen</label>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <span class="text-[9px] text-zinc-500 block mb-1">Min (Char)</span>
+              <input type="number" id="cfgMin" value="3" min="1" class="w-full bg-zinc-950 text-zinc-300 py-1.5 px-2 rounded-lg border border-zinc-800 font-mono" />
+            </div>
+            <div>
+              <span class="text-[9px] text-zinc-500 block mb-1">Max (Char)</span>
+              <input type="number" id="cfgMax" value="7" min="2" class="w-full bg-zinc-950 text-zinc-300 py-1.5 px-2 rounded-lg border border-zinc-800 font-mono" />
+            </div>
+          </div>
+          <span class="text-[10px] text-zinc-500 block">Semakin kecil ukuran potongan, semakin banyak jump label yang tercipta.</span>
+        </div>
 
-  let code = phpCode;
-  
-  // Remove PHP tags if present
-  code = code.replace(/^\s*<\?php\s*/i, '');
-  code = code.replace(/\s*\?>\s*$/i, '');
-  
-  // Minify if enabled
-  if (minify) {
-    code = minifyPHP(code);
-  }
-  
-  // Base64 encode
-  let encoded = b64enc(code);
-  if (doubleBase64) {
-    encoded = b64enc(encoded);
-  }
-  
-  // Generate random variable names
-  const varName = 'z' + randomString(3);
-  const funcName = 'f' + randomString(3);
-  const gotoLabel1 = 'g' + randomString(4);
-  const gotoLabel2 = 'h' + randomString(4);
-  const gotoLabel3 = 'i' + randomString(4);
-  
-  // Generate random GOTO labels if enabled
-  let labels = [gotoLabel1, gotoLabel2, gotoLabel3];
-  if (randomGoto) {
-    labels = generateGotoLabels(5);
-  }
-  
-  // Split encoded string into chunks
-  const chunks = chunkString(encoded, chunkSize);
-  
-  // Build obfuscated code
-  let obfuscated = [];
-  
-  // Initialize variable
-  obfuscated.push(`<?php ${varName} = "";`);
-  
-  // Add encoded chunks with GOTO between chunks
-  for (let i = 0; i < chunks.length; i++) {
-    if (i % 5 === 0 && i > 0) {
-      const label = labels[Math.floor(Math.random() * labels.length)];
-      obfuscated.push(`if (1) goto ${label};`);
-      obfuscated.push(`${label}:`);
+        <!-- Kolom 3: Putaran Enkripsi & Eval Dinamis -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-zinc-400 font-medium mb-1">Rounds Enkripsi Base64</label>
+            <select id="cfgRounds" class="w-full bg-zinc-950 text-zinc-300 py-1.5 px-2 rounded-lg border border-zinc-800 focus:outline-none focus:border-emerald-500/40 font-mono">
+              <option value="1">1 Putaran</option>
+              <option value="2" selected>2 Putaran (Disarankan)</option>
+              <option value="3">3 Putaran (Sangat Aman)</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="block text-zinc-300">Sembunyikan Fungsi Eval</span>
+              <span class="text-[9px] text-zinc-500 block">Merakit decode & eval secara dinamis</span>
+            </div>
+            <input type="checkbox" id="cfgDynamic" checked class="w-4 h-4 rounded border-zinc-800 text-emerald-500 bg-zinc-950 focus:ring-emerald-500/30" />
+          </div>
+        </div>
+
+        <!-- Kolom 4: Blok Kontrol Palsu (Decoys) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-zinc-400 font-medium">Aktifkan Blok Decoy (Palsu)</label>
+            <input type="checkbox" id="cfgDecoys" checked class="w-4 h-4 rounded border-zinc-800 text-emerald-500 bg-zinc-950 focus:ring-emerald-500/30" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-500 mb-1">Jumlah Blok Decoys: <strong id="lblDecoyVal" class="text-zinc-300 font-mono">15</strong></label>
+            <input type="range" id="cfgDecoyCount" min="0" max="60" step="5" value="15" oninput="document.getElementById('lblDecoyVal').innerText = this.value" class="w-full accent-emerald-500 bg-zinc-950 h-1.5 rounded-lg cursor-pointer" />
+          </div>
+          <span class="text-[10px] text-zinc-500 block">Blok kode palsu acak untuk mengacaukan skema analisis statis.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Peta Pelacak Alur Aliran & Log Tindakan -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      
+      <!-- Graph Pelacak Lompatan GOTO -->
+      <div class="md:col-span-8 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800 flex flex-col justify-between space-y-4">
+        <h4 class="text-xs uppercase tracking-wider font-mono font-semibold text-zinc-300 flex items-center gap-1 border-b border-zinc-800 pb-2">
+          🗺️ GOTO PATH TRACER (ANALISIS ALIRAN UTUH)
+        </h4>
+        <div id="pathContainer" class="py-6 text-center space-y-2">
+          <p class="text-xs text-zinc-500 italic">Belum ada rute jalur lompatan yang dianalisis.</p>
+          <p class="text-[10px] text-zinc-600">Lakukan proses Deobfuscate pada kode di atas untuk melihat diagram runtutan eksekusi aslinya secara real-time.</p>
+        </div>
+      </div>
+
+      <!-- Log Terminal Status Diagnostik -->
+      <div class="md:col-span-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800 flex flex-col justify-between space-y-3">
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+          <h4 class="text-xs uppercase tracking-wider font-mono font-semibold text-zinc-300">
+            📊 LOG AKTIVITAS SYSTEM
+          </h4>
+          <button onclick="clearLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono">Hapus Log</button>
+        </div>
+        <div id="logBox" class="bg-zinc-950 rounded-lg p-3 h-[130px] overflow-y-auto text-[10px] font-mono leading-relaxed space-y-1.5 border border-zinc-900 custom-scrollbar text-zinc-400">
+          <div>[INFO] Aplikasi siap digunakan. Menunggu input kode PHP Anda...</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="mt-12 border-t border-zinc-900 bg-zinc-950 py-6 text-center text-xs text-zinc-500 relative z-10">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>© 2026 PHP Goto-Label Labyrinth. Alur Eksekusi Terlindungi.</p>
+    </div>
+  </footer>
+
+  <!-- ==================== CORE SCRIPT LOGIC ==================== -->
+  <script>
+    // System Logger
+    function addLog(type, message) {
+      const logBox = document.getElementById('logBox');
+      const now = new Date().toLocaleTimeString();
+      let colorClass = 'text-zinc-400';
+      if (type === 'success') colorClass = 'text-emerald-400';
+      if (type === 'warn') colorClass = 'text-amber-400 font-bold';
+
+      const logLine = document.createElement('div');
+      logLine.innerHTML = `<span class="text-zinc-600 shrink-0">[${now}]</span> <span class="${colorClass}">${message}</span>`;
+      logBox.insertBefore(logLine, logBox.firstChild);
     }
-    obfuscated.push(`${varName} .= "${chunks[i]}";`);
-  }
-  
-  // Build decoder function with GOTO
-  obfuscated.push(`if (1) goto ${labels[0]};`);
-  obfuscated.push(`${labels[0]}:`);
-  obfuscated.push(`$a = "base";`);
-  obfuscated.push(`$b = "64_decode";`);
-  obfuscated.push(`$c = $a . $b;`);
-  
-  obfuscated.push(`if (1) goto ${labels[1]};`);
-  obfuscated.push(`${labels[1]}:`);
-  obfuscated.push(`$d = $c(${varName});`);
-  
-  if (doubleBase64) {
-    obfuscated.push(`if (1) goto ${labels[2]};`);
-    obfuscated.push(`${labels[2]}:`);
-    obfuscated.push(`$d = $c($d);`);
-  }
-  
-  obfuscated.push(`if (1) goto ${labels[3]};`);
-  obfuscated.push(`${labels[3]}:`);
-  obfuscated.push(`$d = preg_replace('/^<\\?php\\s*/', '', $d);`);
-  obfuscated.push(`$d = preg_replace('/\\s*\\?>$/', '', $d);`);
-  
-  obfuscated.push(`if (1) goto ${labels[4]};`);
-  obfuscated.push(`${labels[4]}:`);
-  obfuscated.push(`eval($d);`);
-  
-  // Add obfuscation comments (optional)
-  obfuscated.push(`// ${randomString(20)}`);
-  
-  return obfuscated.join(' ');
-}
 
-// ===== DECODE OBFUSCATED CODE =====
-function decodeObfuscated(obfuscatedCode) {
-  try {
-    // Try to extract base64 string from the code
-    const matches = obfuscatedCode.match(/\$[a-zA-Z0-9_]+\s*\.=\s*"([^"]+)"/g);
-    if (!matches) {
-      throw new Error('Tidak ditemukan string base64');
+    function clearLogs() {
+      document.getElementById('logBox').innerHTML = '<div class="text-zinc-600">[SISTEM] Log dibersihkan.</div>';
     }
-    
-    // Extract and combine chunks
-    let base64String = '';
-    matches.forEach(match => {
-      const chunk = match.match(/"([^"]+)"/);
-      if (chunk) {
-        base64String += chunk[1];
-      }
-    });
-    
-    // Clean and decode
-    base64String = cleanB64(base64String);
-    let decoded = b64dec(base64String);
-    
-    // Try second layer if needed
-    try {
-      const testDecode = b64dec(cleanB64(decoded));
-      if (testDecode && testDecode.length > 0) {
-        decoded = testDecode;
-      }
-    } catch(e) {
-      // Keep first layer
+
+    // Load Demo Code
+    function loadDemo() {
+      const demo = `<?php
+// Demo PHP Script
+$nama = "Hacker Indonesia";
+$role = "Security Analyst";
+$akses = ["Dashboard", "Server", "Database"];
+
+echo "=== SISTEM KEAMANAN GOTO ===\\n";
+echo "Selamat datang, " . $nama . "!\\n";
+echo "Role Anda: " . $role . "\\n";
+
+if (count($akses) > 0) {
+    echo "Hak Akses Terbuka: " . implode(", ", $akses) . "\\n";
+} else {
+    echo "Akses Ditolak!\\n";
+}`;
+      document.getElementById('inp').value = demo;
+      addLog('info', 'Script demo dimuat ke kotak input.');
     }
-    
-    return decoded;
-  } catch(e) {
-    throw new Error('Gagal mendecode: ' + e.message);
-  }
-}
 
-// ===== UI FUNCTIONS =====
-const $ = (id) => document.getElementById(id);
-
-$("btnObfuscate").onclick = () => {
-  const source = $("source").value;
-  if (!source.trim()) {
-    alert('Masukkan kode PHP terlebih dahulu!');
-    return;
-  }
-  
-  try {
-    const options = {
-      minify: $("chkMinify").checked,
-      randomGoto: $("chkRandomGoto").checked,
-      doubleBase64: $("chkDoubleBase64").checked
+    // Helper functions for UTF-8 Base64
+    const b64enc = (str) => {
+      const bytes = new TextEncoder().encode(str);
+      let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
+      return btoa(bin);
     };
     
-    const result = obfuscateWithGoto(source, options);
-    $("result").value = result;
-  } catch(e) {
-    alert('Error: ' + e.message);
-  }
-};
+    const b64dec = (b64) => {
+      const bin = atob(b64.replace(/[^A-Za-z0-9+/=]/g, ''));
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    };
 
-$("btnTestDecode").onclick = () => {
-  const code = $("result").value;
-  if (!code.trim()) {
-    alert('Tidak ada kode untuk didecode!');
-    return;
-  }
-  
-  try {
-    const decoded = decodeObfuscated(code);
-    alert('Decode berhasil!\n\n' + decoded.substring(0, 500) + (decoded.length > 500 ? '...' : ''));
-  } catch(e) {
-    alert('Error: ' + e.message);
-  }
-};
+    // Obfuscator Core Logic
+    function obfuscatePhp(phpCode, options) {
+      // 1. Bersihkan php open/close tags
+      let cleanBody = phpCode.trim();
+      if (cleanBody.toLowerCase().startsWith('<?php')) {
+        cleanBody = cleanBody.slice(5);
+      } else if (cleanBody.toLowerCase().startsWith('<?')) {
+        cleanBody = cleanBody.slice(2);
+      }
+      if (cleanBody.endsWith('?>')) {
+        cleanBody = cleanBody.slice(0, -2);
+      }
+      cleanBody = cleanBody.trim();
 
-$("btnCopy").onclick = () => {
-  const result = $("result");
-  result.select();
-  document.execCommand('copy');
-  alert('Kode berhasil dicopy!');
-};
+      // 2. Multi-round Base64 Encoding
+      let encodedPayload = b64enc(cleanBody);
+      for (let i = 1; i < options.rounds; i++) {
+        encodedPayload = b64enc(encodedPayload);
+      }
 
-$("btnClearSource").onclick = () => $("source").value = "";
-$("btnClearResult").onclick = () => $("result").value = "";
+      // 3. Pecah menjadi chunks acak
+      const chunks = [];
+      let currentIndex = 0;
+      while (currentIndex < encodedPayload.length) {
+        const size = Math.floor(Math.random() * (options.chunkSizeMax - options.chunkSizeMin + 1) + options.chunkSizeMin);
+        chunks.push(encodedPayload.substring(currentIndex, currentIndex + size));
+        currentIndex += size;
+      }
 
-// Example: Show sample code
-const sampleCode = `<?php
-function greet($name) {
-    echo "Hello, " . $name . "!";
-}
+      const numSteps = chunks.length;
+      const usedLabels = new Set();
+      
+      const randomString = (len, chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') => {
+        let res = '';
+        for (let i = 0; i < len; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+        return res;
+      };
 
-greet("World");
-?>`;
+      // 4. Generate Label unik
+      const generateLabel = (index, style) => {
+        while (true) {
+          let label = '';
+          if (style === 'hex') {
+            const randHex = Math.floor(Math.random() * 0xfffffff).toString(16);
+            label = `lbl_0x${randHex}`;
+          } else if (style === 'binary') {
+            let bin = '';
+            for (let i = 0; i < 4; i++) bin += Math.random() > 0.5 ? '1' : '0';
+            label = `bin_${bin}_${index}_${randomString(2)}`;
+          } else if (style === 'cyber') {
+            const nodes = ['node', 'core', 'cipher', 'vault', 'link', 'proxy', 'route', 'buffer'];
+            const node = nodes[Math.floor(Math.random() * nodes.length)];
+            label = `${node}_${index}_x${Math.floor(Math.random() * 999)}`;
+          } else {
+            label = 'O' + randomString(6, 'oO0') + index;
+          }
 
-// Load sample on first open
-$("source").value = sampleCode;
+          if (!usedLabels.has(label)) {
+            usedLabels.add(label);
+            return label;
+          }
+        }
+      };
 
-</script>
+      const stepLabels = [];
+      for (let i = 0; i <= numSteps; i++) {
+        stepLabels.push(generateLabel(i, options.labelStyle));
+      }
+
+      const blocks = [];
+      const v = options.variableName;
+
+      // Buat blok fragmen
+      for (let i = 0; i < numSteps; i++) {
+        const isFirst = i === 0;
+        const operator = isFirst ? '=' : '.=';
+        const chunk = chunks[i];
+        const nextLabel = stepLabels[i + 1];
+        const escapedChunk = chunk.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+        blocks.push({
+          label: stepLabels[i],
+          code: `$${v} ${operator} "${escapedChunk}";\ngoto ${nextLabel};`
+        });
+      }
+
+      // Buat blok eksekusi final
+      const executionLabel = stepLabels[numSteps];
+      let executionCode = '';
+
+      if (options.dynamicEval) {
+        const fnBase64 = `fn_b64_` + randomString(4);
+        const fnEval = `fn_ev_` + randomString(4);
+        const resultPayload = `payload_` + randomString(4);
+
+        executionCode += `$${fnBase64} = "ba" . "se" . "64" . "_" . "de" . "co" . "de";\n`;
+        executionCode += `$${fnEval} = "ev" . "al";\n`;
+        executionCode += `$${resultPayload} = $${v};\n`;
+        for (let r = 0; r < options.rounds; r++) {
+          executionCode += `$${resultPayload} = $${fnBase64}($${resultPayload});\n`;
+        }
+        executionCode += `$${resultPayload} = preg_replace('/^<\\?php\\s*/i', '', $${resultPayload});\n`;
+        executionCode += `$${resultPayload} = preg_replace('/\\s*\\?>$/i', '', $${resultPayload});\n`;
+        executionCode += `$${fnEval}($${resultPayload});`;
+      } else {
+        let decodeString = `$${v}`;
+        for (let r = 0; r < options.rounds; r++) {
+          decodeString = `base64_decode(${decodeString})`;
+        }
+        executionCode += `$dec = ${decodeString};\n`;
+        executionCode += `$dec = preg_replace('/^<\\?php\\s*/i', '', $dec);\n`;
+        executionCode += `$dec = preg_replace('/\\s*\\?>$/i', '', $dec);\n`;
+        executionCode += `eval($dec);`;
+      }
+
+      blocks.push({
+        label: executionLabel,
+        code: executionCode
+      });
+
+      // Buat Decoys (Blok palsu penyesat decompiler)
+      if (options.addDecoys && options.decoyCount > 0) {
+        const decoyLabels = [];
+        for (let d = 0; d < options.decoyCount; d++) {
+          decoyLabels.push(generateLabel(d + 1000, options.labelStyle));
+        }
+
+        const dummyVars = ['dummy_state', 'chk_sum', 'session_tok', 'seed_val', 'debug_mode'];
+
+        for (let d = 0; d < options.decoyCount; d++) {
+          const decoyLabel = decoyLabels[d];
+          const nextDecoy = decoyLabels[(d + 1) % options.decoyCount];
+          const randVar = dummyVars[Math.floor(Math.random() * dummyVars.length)] + `_` + randomString(2);
+          const randVal = Math.floor(Math.random() * 100000);
+          const randStr = randomString(5);
+
+          const decoyOperations = [
+            `$${randVar} = ${randVal} ^ 0x5f;\ngoto ${nextDecoy};`,
+            `$${randVar} = md5("${randStr}");\ngoto ${nextDecoy};`,
+            `if (isset($$${randVar})) {\n  goto ${nextDecoy};\n}`,
+            `$${randVar} = array_reverse([${randVal}, ${randVal + 1}, ${randVal + 2}]);\ngoto ${nextDecoy};`,
+            `$${randVar} = strlen("${randStr}");\ngoto ${nextDecoy};`
+          ];
+
+          const op = decoyOperations[Math.floor(Math.random() * decoyOperations.length)];
+
+          blocks.push({
+            label: decoyLabel,
+            code: op,
+            comment: 'Decoy/Fake control-flow block'
+          });
+        }
+      }
+
+      // 5. Shuffle / Acak seluruh susunan blok secara acak total
+      const shuffledBlocks = [...blocks];
+      for (let i = shuffledBlocks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = shuffledBlocks[i];
+        shuffledBlocks[i] = shuffledBlocks[j];
+        shuffledBlocks[j] = temp;
+      }
+
+      // 6. Buat kode keluaran utuh
+      const outputLines = [];
+      outputLines.push('<?php');
+      outputLines.push('/**');
+      outputLines.push(' * Obfuscated with PHP Goto-Label Labyrinth');
+      outputLines.push(' * Protection Level: High (Goto-Label Spaghetti Mode)');
+      outputLines.push(` * Generated at: ${new Date().toISOString()}`);
+      outputLines.push(' */');
+      outputLines.push('');
+      outputLines.push(`goto ${stepLabels[0]};`);
+      outputLines.push('');
+
+      shuffledBlocks.forEach((block) => {
+        if (block.comment) {
+          outputLines.push(`// ${block.comment}`);
+        }
+        outputLines.push(`${block.label}:`);
+        const indented = block.code.split('\n').map(l => '  ' + l).join('\n');
+        outputLines.push(indented);
+        outputLines.push('');
+      });
+
+      return outputLines.join('\n');
+    }
+
+    // Trigger Obfuscation Action
+    function doObfuscate() {
+      const src = document.getElementById('inp').value;
+      if (!src.trim()) {
+        alert('Input PHP biasa masih kosong!');
+        return;
+      }
+
+      addLog('info', 'Memulai proses obfuscation Labyrinth...');
+
+      const options = {
+        labelStyle: document.getElementById('cfgStyle').value,
+        chunkSizeMin: parseInt(document.getElementById('cfgMin').value) || 3,
+        chunkSizeMax: parseInt(document.getElementById('cfgMax').value) || 7,
+        rounds: parseInt(document.getElementById('cfgRounds').value) || 2,
+        addDecoys: document.getElementById('cfgDecoys').checked,
+        decoyCount: parseInt(document.getElementById('cfgDecoyCount').value) || 15,
+        variableName: 'z',
+        dynamicEval: document.getElementById('cfgDynamic').checked
+      };
+
+      try {
+        const res = obfuscatePhp(src, options);
+        document.getElementById('out').value = res;
+        
+        // Hitung skor kompleksitas
+        const linesCount = res.split('\n').length;
+        const gotosCount = (res.match(/goto/g) || []).length;
+        const labelsCount = (res.match(/[A-Za-z0-9_]+:/g) || []).length;
+        const score = (gotosCount * 10) + (labelsCount * 5) + Math.min(linesCount, 150);
+
+        document.getElementById('lblScore').innerText = `${score} pts`;
+        
+        const gradeSpan = document.getElementById('lblGrade');
+        if (score < 80) {
+          gradeSpan.innerText = 'Menengah (Spaghetti)';
+          gradeSpan.className = 'inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+        } else if (score < 200) {
+          gradeSpan.innerText = 'Rumit (Maze)';
+          gradeSpan.className = 'inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full text-amber-400 bg-amber-500/10 border border-amber-500/20';
+        } else {
+          gradeSpan.innerText = 'Ekstrim (Labyrinth)';
+          gradeSpan.className = 'inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full text-rose-400 bg-rose-500/10 border border-rose-500/35 animate-pulse';
+        }
+
+        addLog('success', `Obfuscation selesai! Membagi string menjadi ${gotosCount - 1} fragmen dengan ${options.decoyCount} decoy blocks.`);
+        
+        // Reset path trace on re-encode
+        document.getElementById('pathContainer').innerHTML = `
+          <p class="text-xs text-zinc-500 italic">Rute baru siap dilacak.</p>
+          <p class="text-[10px] text-zinc-600">Lakukan Deobfuscate pada output untuk melacak rute pengerjaan sesungguhnya.</p>
+        `;
+      } catch (err) {
+        addLog('warn', `Gagal memproses obfuscate: ${err.message}`);
+      }
+    }
+
+    // Deobfuscator Core Logic
+    function deobfuscatePhp(rawPhp) {
+      if (!rawPhp.trim()) return { success: false, error: 'Input kosong.' };
+
+      const lines = rawPhp.split('\n');
+      const labelMap = new Map();
+      let startLabel = '';
+
+      // Cari entry point utama (goto)
+      const entryMatch = /goto\s+([a-zA-Z0-9_]+)\s*;/i.exec(rawPhp);
+      if (entryMatch) {
+        startLabel = entryMatch[1];
+      }
+
+      let currentLabel = null;
+      let currentCodeLines = [];
+
+      // Kelompokkan isi code di dalam label masing-masing
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const labelMatch = /^\s*([a-zA-Z0-9_]+)\s*:\s*$/.exec(line);
+        if (labelMatch) {
+          if (currentLabel) {
+            labelMap.set(currentLabel, currentCodeLines.join('\n'));
+          }
+          currentLabel = labelMatch[1];
+          currentCodeLines = [];
+        } else {
+          if (currentLabel) {
+            currentCodeLines.push(lines[i]);
+          }
+        }
+      }
+      if (currentLabel) {
+        labelMap.set(currentLabel, currentCodeLines.join('\n'));
+      }
+
+      if (!startLabel) {
+        // Cari label dengan variabel penugasan '=' sebagai fallback
+        for (const [lbl, code] of labelMap.entries()) {
+          if (code.includes('=')) {
+            startLabel = lbl;
+            break;
+          }
+        }
+      }
+
+      if (!startLabel || !labelMap.has(startLabel)) {
+        return { success: false, error: 'Gagal mendeteksi awal jump label atau format GOTO.' };
+      }
+
+      let assembledBase64 = '';
+      let activeLabel = startLabel;
+      const visited = new Set();
+      const pathTaken = [];
+
+      const unescapePhpString = (str) => {
+        return str.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+      };
+
+      // Ikuti aliran jump label
+      while (activeLabel && labelMap.has(activeLabel)) {
+        if (visited.has(activeLabel)) break; // Cegah infinite loop di decoy
+        visited.add(activeLabel);
+        pathTaken.push(activeLabel);
+
+        const blockCode = labelMap.get(activeLabel) || '';
+        const stringRegex = /(["'])((?:[^\\]|\\.)*?)\1/g;
+        let m;
+        let foundString = '';
+        while ((m = stringRegex.exec(blockCode)) !== null) {
+          const content = m[2];
+          if (content.length > foundString.length) {
+            foundString = content;
+          }
+        }
+
+        if (foundString) {
+          assembledBase64 += unescapePhpString(foundString);
+        }
+
+        const gotoMatch = /goto\s+([a-zA-Z0-9_]+)\s*;/i.exec(blockCode);
+        if (gotoMatch) {
+          activeLabel = gotoMatch[1];
+        } else {
+          activeLabel = null;
+        }
+      }
+
+      if (!assembledBase64) {
+        return { success: false, error: 'Gagal mengumpulkan serpihan teks Base64 dari rute pengerjaan.' };
+      }
+
+      return smartBase64Decode(assembledBase64, 'goto-spaghetti', pathTaken);
+    }
+
+    function deobfuscateOldLinear(rawPhp) {
+      const stringRegex = /\$[a-zA-Z_]\w*\s*(?:\.|\+)?=\s*(["'])((?:[^\\]|\\.)*?)\1\s*;/g;
+      let m;
+      let assembledBase64 = '';
+      const unescapePhpString = (str) => str.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+      
+      while ((m = stringRegex.exec(rawPhp)) !== null) {
+        assembledBase64 += unescapePhpString(m[2]);
+      }
+
+      if (!assembledBase64) {
+        const fallbackRegex = /(["'])((?:[^\\]|\\.)*?)\1/g;
+        while ((m = fallbackRegex.exec(rawPhp)) !== null) {
+          if (m[2].length > 4 && /^[A-Za-z0-9+/=_-]+$/.test(m[2])) {
+            assembledBase64 += unescapePhpString(m[2]);
+          }
+        }
+      }
+
+      if (!assembledBase64) {
+        return { success: false, error: 'Tidak ditemukan fragmen base64 linear.' };
+      }
+
+      return smartBase64Decode(assembledBase64, 'old-linear');
+    }
+
+    function smartBase64Decode(b64String, format, pathTaken) {
+      let currentString = b64String;
+      let rounds = 0;
+      const maxRounds = 4;
+      let lastSuccessfulDecoded = b64String;
+
+      const isReadableCode = (str) => {
+        const keywords = ['<?php', 'echo', 'print', 'function', 'class', 'public', 'foreach', 'if', 'return', 'array'];
+        return keywords.some((kw) => str.toLowerCase().includes(kw)) || /\$[a-zA-Z_]\w*/.test(str);
+      };
+
+      try {
+        while (rounds < maxRounds) {
+          const sanitized = currentString
+            .replace(/[^A-Za-z0-9+/=_-]/g, '')
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+          let decoded;
+          if (sanitized.length % 4 !== 0) {
+            const padded = sanitized.padEnd(sanitized.length + (4 - (sanitized.length % 4)) % 4, '=');
+            decoded = b64dec(padded);
+          } else {
+            decoded = b64dec(sanitized);
+          }
+
+          lastSuccessfulDecoded = currentString;
+          currentString = decoded;
+          rounds++;
+
+          if (isReadableCode(currentString)) {
+            break;
+          }
+        }
+
+        let finalCode = currentString.trim();
+        if (finalCode.toLowerCase().startsWith('<?php')) {
+          finalCode = finalCode.slice(5).trim();
+        }
+        if (finalCode.endsWith('?>')) {
+          finalCode = finalCode.slice(0, -2).trim();
+        }
+
+        return {
+          success: true,
+          code: finalCode,
+          detectedRounds: rounds,
+          format,
+          pathTaken
+        };
+      } catch (err) {
+        if (rounds > 0) {
+          let finalCode = lastSuccessfulDecoded.trim();
+          if (finalCode.toLowerCase().startsWith('<?php')) {
+            finalCode = finalCode.slice(5).trim();
+          }
+          return {
+            success: true,
+            code: finalCode,
+            detectedRounds: rounds - 1,
+            format,
+            pathTaken
+          };
+        }
+        return {
+          success: false,
+          error: `Gagal dekode Base64: ${err.message}`
+        };
+      }
+    }
+
+    // Trigger Deobfuscation Action
+    function doDeobfuscate() {
+      const src = document.getElementById('out').value;
+      if (!src.trim()) {
+        alert('Input Kode Obfuscated masih kosong!');
+        return;
+      }
+
+      addLog('info', 'Mulai menelusuri graph kontrol & membalikkan kode...');
+
+      try {
+        const hasGoto = /goto\s+[a-zA-Z0-9_]+\s*;/i.test(src);
+        const res = hasGoto ? deobfuscatePhp(src) : deobfuscateOldLinear(src);
+
+        if (res.success) {
+          document.getElementById('inp').value = '<?php\n' + res.code;
+          addLog('success', `Berhasil mendekode! Terdeteksi ${res.detectedRounds} putaran Base64.`);
+
+          // Render Path Tracer UI
+          const pathContainer = document.getElementById('pathContainer');
+          if (res.pathTaken && res.pathTaken.length > 0) {
+            addLog('success', `Berhasil menelusuri ${res.pathTaken.length} lompatan jump label asli!`);
+            
+            let nodesHtml = `
+              <p class="text-xs text-zinc-300 font-medium">Jalur Aliran Aktif (${res.pathTaken.length} Blok):</p>
+              <div class="flex flex-wrap items-center justify-center gap-1.5 p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 max-h-[140px] overflow-y-auto custom-scrollbar">
+                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-cyan-900/30 text-cyan-400 border border-cyan-800/50 rounded">START_JUMP</span>
+            `;
+
+            res.pathTaken.forEach((lbl, i) => {
+              nodesHtml += `
+                <span class="text-zinc-600 text-xs">➔</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 ${i === res.pathTaken.length - 1 ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-900 text-zinc-400 border border-zinc-800'} rounded border">${lbl}</span>
+              `;
+            });
+
+            nodesHtml += `
+                <span class="text-zinc-600 text-xs">➔</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-rose-950 text-rose-300 border border-rose-900/40 rounded animate-pulse">EXEC_EVAL</span>
+              </div>
+            `;
+            pathContainer.innerHTML = nodesHtml;
+          } else {
+            pathContainer.innerHTML = `
+              <p class="text-xs text-emerald-400 font-medium">Dekode Format Linear Lama Berhasil</p>
+              <p class="text-[10px] text-zinc-500">Metode ini tidak menggunakan control flow GOTO melainkan append string bertahap lurus biasa.</p>
+            `;
+          }
+        } else {
+          addLog('warn', `Proses deobfuscate gagal: ${res.error}`);
+        }
+      } catch (err) {
+        addLog('warn', `Error deobfuscator: ${err.message}`);
+      }
+    }
+
+    // Copy to clipboard helper
+    function copyText(elementId) {
+      const area = document.getElementById(elementId);
+      if (!area.value) return;
+      navigator.clipboard.writeText(area.value);
+      addLog('success', 'Teks berhasil disalin ke clipboard!');
+    }
+
+    // Clear textarea helper
+    function clearText(elementId) {
+      document.getElementById(elementId).value = '';
+      addLog('info', `Kotak input ${elementId === 'inp' ? 'PHP Biasa' : 'PHP Obfuscated'} dibersihkan.`);
+    }
+  </script>
 </body>
 </html>
