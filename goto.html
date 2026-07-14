@@ -1,16 +1,16 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>PHP Obfuscation ↔ Deobfuscation (Full GOTO)</title>
+<title>PHP Obfuscation ↔ Deobfuscation (Compact GOTO)</title>
 <style>
   body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:16px}
-  textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px}
+  textarea{width:100%;height:260px;border:1px solid #ccc;border-radius:8px;padding:10px;font-family:monospace;font-size:13px}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   button{padding:8px 14px;margin:8px 8px 0 0}
   .goto-info{background:#f0f0f0;padding:10px;border-radius:6px;margin:10px 0;font-size:12px}
 </style>
 
 <div class="goto-info">
-  <strong>🔥 FULL GOTO Version:</strong> Semua kode menggunakan struktur goto untuk obfuscation maksimal
+  <strong>🔥 COMPACT GOTO Version:</strong> Kode padat dengan semua GOTO di samping (horizontal)
 </div>
 
 <div class="row">
@@ -26,7 +26,7 @@ $z .= "eWIz";
   <div>
     <h3>Hasil Decode (PHP biasa)</h3>
     <textarea id="out" placeholder="Hasil PHP muncul di sini..."></textarea>
-    <button id="btnEncode">PHP biasa → Obfuscated (Full GOTO)</button>
+    <button id="btnEncode">PHP biasa → Obfuscated (Compact GOTO)</button>
     <button id="btnClearOut">Bersihkan Output</button>
   </div>
 </div>
@@ -87,85 +87,64 @@ $("btnDecode").onclick = () => {
 
 $("btnEncode").onclick = () => {
   const php = $("out").value || "";
-  // buang tag agar tidak dobel
   const body = php.replace(/^\s*<\?php\s*/i,'').replace(/\s*\?>\s*$/,'');
-  // double base64
   const twice = b64enc(b64enc(body));
-  // pecah per 4 char
   const CHUNK = 4;
-  let lines = ['<?php', 'goto start;', '', 'start:', '$z = "";'];
   
-  // Buat GOTO untuk setiap chunk
   let chunks = [];
   for (let i = 0; i < twice.length; i += CHUNK) {
     chunks.push(twice.slice(i, i+CHUNK));
   }
   
-  // Generate kode dengan GOTO untuk setiap chunk
+  // Buat kode GOTO yang PADAT dan ke SAMPING
+  let lines = ['<?php'];
+  
+  // String chunks dengan GOTO ke samping
+  let chunkLines = [];
   for (let i = 0; i < chunks.length; i++) {
-    const label = `chunk${i}`;
-    const nextLabel = (i < chunks.length - 1) ? `goto chunk${i+1};` : '';
-    
     if (i === 0) {
-      lines.push(`${label}:`);
-      lines.push(`$z .= "${chunks[i]}";`);
-      if (nextLabel) lines.push(nextLabel);
+      chunkLines.push(`$z="";${i < chunks.length-1 ? 'goto c1;' : ''}`);
     } else {
-      lines.push(``);
-      lines.push(`${label}:`);
-      lines.push(`$z .= "${chunks[i]}";`);
-      if (nextLabel) lines.push(nextLabel);
+      const label = `c${i}`;
+      const nextGoto = i < chunks.length-1 ? `goto c${i+1};` : '';
+      chunkLines.push(`${label}:$z.="${chunks[i]}";${nextGoto}`);
     }
   }
   
-  // Semua proses decode pakai GOTO
-  lines.push(``);
-  lines.push(`goto decode1;`);
-  lines.push(``);
-  lines.push(`decode1:`);
-  lines.push(`$a = "base";`);
-  lines.push(`goto next1;`);
-  lines.push(``);
-  lines.push(`next1:`);
-  lines.push(`$b = "64_decode";`);
-  lines.push(`goto next2;`);
-  lines.push(``);
-  lines.push(`next2:`);
-  lines.push(`$c = $a . $b;`);
-  lines.push(`goto process1;`);
-  lines.push(``);
-  lines.push(`process1:`);
-  lines.push(`$string = $c($z);`);
-  lines.push(`goto process2;`);
-  lines.push(``);
-  lines.push(`process2:`);
-  lines.push(`$string = $c($string);`);
-  lines.push(`goto clean_start;`);
-  lines.push(``);
-  lines.push(`clean_start:`);
-  lines.push(`$pattern1 = '/^<\\?php\\s*/';`);
-  lines.push(`goto clean1;`);
-  lines.push(``);
-  lines.push(`clean1:`);
-  lines.push(`$string = preg_replace($pattern1, '', $string);`);
-  lines.push(`goto clean2_start;`);
-  lines.push(``);
-  lines.push(`clean2_start:`);
-  lines.push(`$pattern2 = '/\\s*\\?>$/';`);
-  lines.push(`goto clean2;`);
-  lines.push(``);
-  lines.push(`clean2:`);
-  lines.push(`$string = preg_replace($pattern2, '', $string);`);
-  lines.push(`goto eval_start;`);
-  lines.push(``);
-  lines.push(`eval_start:`);
-  lines.push(`eval($string);`);
-  lines.push(`goto end;`);
-  lines.push(``);
-  lines.push(`end:`);
-  lines.push(`?>`);
+  // Semua proses dalam satu baris dengan GOTO ke samping
+  const processLines = [
+    `d1:$a="base";goto d2;`,
+    `d2:$b="64_decode";goto d3;`,
+    `d3:$c=$a.$b;goto p1;`,
+    `p1:$string=$c($z);goto p2;`,
+    `p2:$string=$c($string);goto cl;`,
+    `cl:$p1='/^<\\?php\\s*/';goto cl2;`,
+    `cl2:$string=preg_replace($p1,'',$string);goto cl3;`,
+    `cl3:$p2='/\\s*\\?>$/';goto cl4;`,
+    `cl4:$string=preg_replace($p2,'',$string);goto ev;`,
+    `ev:eval($string);goto en;`,
+    `en:?>`
+  ];
   
-  $("inp").value = lines.join("\n");
+  // Gabungkan semua
+  let allLines = [];
+  allLines.push('<?php');
+  allLines.push('goto s;');
+  allLines.push('s:' + chunkLines[0]);
+  
+  for (let i = 1; i < chunkLines.length; i++) {
+    allLines.push(chunkLines[i]);
+  }
+  
+  // Tambahkan proses dengan label unik
+  for (let line of processLines) {
+    allLines.push(line);
+  }
+  
+  // Filter yang kosong
+  allLines = allLines.filter(line => line.trim() !== '');
+  
+  $("inp").value = allLines.join("\n");
 };
 
 $("btnClearIn").onclick = ()=> $("inp").value = "";
